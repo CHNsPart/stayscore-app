@@ -5,12 +5,8 @@ import { prisma } from "@/lib/prisma";
 
 export async function GET() {
   try {
-    console.log("API route: Starting GET request");
-
     const { getUser } = getKindeServerSession();
     const kindeUser = await getUser();
-
-    console.log("API route: User from Kinde:", kindeUser);
 
     if (!kindeUser) {
       console.log("API route: Unauthorized - No user found");
@@ -20,7 +16,6 @@ export async function GET() {
     // Handle missing email
     const email = kindeUser.email || `${kindeUser.id}@placeholder.com`;
 
-    console.log("API route: Attempting to find or create user in database");
     let dbUser;
     try {
       dbUser = await prisma.user.upsert({
@@ -46,9 +41,6 @@ export async function GET() {
       return NextResponse.json({ error: "Database error", details: (prismaError as Error).message }, { status: 500 });
     }
 
-    console.log("API route: Database user:", dbUser);
-
-    console.log("API route: Returning user data");
     return NextResponse.json({ user: dbUser, reviews: dbUser.reviews });
   } catch (error) {
     console.error('API route: Error in GET request:', error);

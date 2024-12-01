@@ -3,7 +3,6 @@ import localFont from "next/font/local";
 import "./globals.css";
 import Header from "./_components/Header";
 import Footer from "./_components/Footer";
-import { KindeProvider } from "@kinde-oss/kinde-auth-nextjs";
 import { ThemeProvider } from 'next-themes';
 import { Providers } from "./providers";
 

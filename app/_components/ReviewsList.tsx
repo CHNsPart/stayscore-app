@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Review, User } from "@prisma/client";
 import ReviewCard from "./ReviewCard";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 
 type ReviewWithUser = Review & { user: User };
 
@@ -17,7 +17,6 @@ export default function ReviewsList({ initialReviews, currentUser }: ReviewsList
   const [reviews, setReviews] = useState(initialReviews);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const router = useRouter();
   const searchParams = useSearchParams();
 
   useEffect(() => {

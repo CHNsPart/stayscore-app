@@ -1,8 +1,5 @@
 import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
-import { prisma } from "@/lib/prisma";
-import ReviewsList from "@/app/_components/ReviewsList";
 import ReviewFilters from "@/app/_components/ReviewFilters";
-import { Review, User } from "@prisma/client";
 import FilteredReviews from "../_components/FilteredReviews";
 
 export default async function ReviewsPage({

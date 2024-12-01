@@ -6,13 +6,15 @@ import { Switch } from "@/components/ui/switch";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useTheme } from 'next-themes';
 
+type DynamicFieldValue = string | number | boolean;
+
 interface Review {
   location: string;
   rating: number;
   createdAt: string;
   content: string;
   images?: string;
-  dynamicFields?: Record<string, any>;
+  dynamicFields?: Record<string, DynamicFieldValue>;
   anonymous?: boolean;
 }
 
@@ -168,7 +170,7 @@ export default function ProfileClient() {
                       <p>Additional Information:</p>
                       <ul>
                         {Object.entries(review.dynamicFields).map(([key, value]) => (
-                          <li key={key}>{key}: {value}</li>
+                          <li key={key}>{key}: {String(value)}</li>
                         ))}
                       </ul>
                     </div>
