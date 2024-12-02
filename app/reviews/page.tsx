@@ -1,6 +1,6 @@
 import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
-import ReviewFilters from "@/app/_components/ReviewFilters";
-import FilteredReviews from "../_components/FilteredReviews";
+import ReviewFilters from "@/components/review/ReviewFilters";
+import FilteredReviews from "@/components/review/FilteredReviews";
 
 export default async function ReviewsPage({
   searchParams,

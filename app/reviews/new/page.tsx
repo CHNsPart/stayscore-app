@@ -1,4 +1,4 @@
-import CreateReviewForm from "@/app/_components/CreateReviewForm";
+import CreateReviewForm from "@/components/review/CreateReviewForm";
 import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
 import { redirect } from "next/navigation";
 
