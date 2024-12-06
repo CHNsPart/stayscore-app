@@ -1,26 +1,22 @@
 import { Star, MapPin, User as UserIcon } from "lucide-react";
-import { Review, User } from "@prisma/client";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import Image from "next/image";
+import { ReviewCardProps } from "@/types";
 
-interface ReviewCardProps {
-  review: Review & { user: User };
-  currentUser: User | null;
-}
+export default function ReviewCard({ review, currentUser, isAdmin }: ReviewCardProps) {
+  const isOwnReview = currentUser?.id === review.userId;
+  const shouldHideIdentity = (review.anonymous || review.user.anonymous) && 
+                            !isAdmin && 
+                            !isOwnReview;
 
-export default function ReviewCard({ review, currentUser }: ReviewCardProps) {
-  const isOwnReview = currentUser && currentUser.id === review.userId;
-  const isAnonymous = review.anonymous;
+  const displayName = shouldHideIdentity ? "Anonymous User" : review.user.name;
+  const displayEmail = shouldHideIdentity ? "****@****.com" : review.user.email;
 
-  const getRandomName = () => {
-    const names = ["Alex", "Sam", "Jordan", "Taylor", "Casey", "Morgan"];
-    return names[Math.floor(Math.random() * names.length)];
-  };
-
-  const displayName = isAnonymous ? getRandomName() : review.user.name;
-  const displayEmail = isAnonymous ? "****@****.com" : review.user.email;
+  const dynamicFields = review.dynamicFields ? 
+    JSON.parse(review.dynamicFields) as Record<string, unknown> : 
+    null;
 
   return (
     <Card className="h-full flex flex-col">
@@ -43,9 +39,12 @@ export default function ReviewCard({ review, currentUser }: ReviewCardProps) {
               />
             ))}
           </div>
-          <span className="text-sm text-gray-500 px-2 bg-gray-50 dark:bg-black/50 border rounded-full">{review.rating}<span className="text-gray-400 text-xs">{"/10"}</span></span>
+          <span className="text-sm text-gray-500 px-2 bg-gray-50 dark:bg-black/50 border rounded-full">
+            {review.rating}<span className="text-gray-400 text-xs">{"/10"}</span>
+          </span>
         </div>
       </CardHeader>
+      
       <CardContent className="flex-grow">
         <p className="text-sm">{review.content}</p>
         {review.images && (
@@ -63,10 +62,11 @@ export default function ReviewCard({ review, currentUser }: ReviewCardProps) {
           </div>
         )}
       </CardContent>
+
       <CardFooter className="flex items-center justify-between">
         <div className="flex items-center space-x-2">
           <Avatar>
-            {isAnonymous ? (
+            {shouldHideIdentity ? (
               <AvatarFallback>
                 <UserIcon className="size-4" />
               </AvatarFallback>
@@ -84,9 +84,13 @@ export default function ReviewCard({ review, currentUser }: ReviewCardProps) {
         </div>
         <div className="flex space-x-2">
           {isOwnReview && <Badge variant="outline">Your Review</Badge>}
-          {review.dynamicFields && (
-            <Badge variant="secondary">Custom Fields</Badge>
+          {review.anonymous && isAdmin && (
+            <Badge variant="secondary" className="text-xs">Anonymous Review</Badge>
           )}
+          {review.user.anonymous && isAdmin && (
+            <Badge variant="secondary" className="text-xs">Anonymous User</Badge>
+          )}
+          {dynamicFields && <Badge variant="secondary">Custom Fields</Badge>}
         </div>
       </CardFooter>
     </Card>

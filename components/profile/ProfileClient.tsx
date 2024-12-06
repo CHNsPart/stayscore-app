@@ -5,6 +5,7 @@ import { Star, Calendar } from 'lucide-react';
 import { Switch } from "@/components/ui/switch";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useTheme } from 'next-themes';
+import { AnonymousSettings } from '@/components/profile/AnonymousSettings';
 
 type DynamicFieldValue = string | number | boolean;
 
@@ -110,19 +111,16 @@ export default function ProfileClient() {
 
           {/* Settings */}
           <div className="bg-card text-card-foreground rounded-lg shadow-md p-6">
-          <h2 className="text-xl font-semibold mb-4">Settings</h2>
-          <div className="flex items-center justify-between mb-4">
-            <span>Dark Mode</span>
-            <Switch checked={theme === 'dark'} onCheckedChange={toggleDarkMode} />
-          </div>
-          <div className="flex items-center justify-between">
-            <div>
-              <span>Global Anonymous Mode</span>
-              <p className="text-sm text-muted-foreground">Hides your name and email on your profile page.</p>
+            <h2 className="text-xl font-semibold mb-4">Settings</h2>
+            <div className="flex items-center justify-between mb-4">
+              <span>Dark Mode</span>
+              <Switch checked={theme === 'dark'} onCheckedChange={toggleDarkMode} />
             </div>
-            <Switch checked={anonymousGlobal} onCheckedChange={toggleAnonymous} />
+            <AnonymousSettings 
+              anonymousGlobal={anonymousGlobal} 
+              onToggleAnonymous={toggleAnonymous}
+            />
           </div>
-        </div>
 
           {/* User Stats */}
           <div className="md:col-span-2 bg-card text-card-foreground rounded-lg shadow-md p-6">

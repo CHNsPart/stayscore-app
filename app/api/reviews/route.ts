@@ -1,71 +1,88 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma, syncDatabase } from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
 import { getKindeServerSession } from '@kinde-oss/kinde-auth-nextjs/server';
 import { Prisma } from '@prisma/client';
 
+const ADMIN_EMAIL = 'imchn24@gmail.com';
+
 export async function GET(request: NextRequest) {
   try {
-    // Attempt to sync if in development
-    if (process.env.NODE_ENV !== 'production') {
-      try {
-        await syncDatabase();
-      } catch (syncError) {
-        console.warn('Sync warning:', syncError);
-        // Continue with the request even if sync fails
-      }
-    }
+    const { getUser } = getKindeServerSession();
+    const currentUser = await getUser();
+    const isAdmin = currentUser?.email === ADMIN_EMAIL;
 
     const { searchParams } = new URL(request.url);
-    const location = searchParams.get('location');
-    const rating = searchParams.get('rating') ? parseInt(searchParams.get('rating')!, 10) : undefined;
-    const filter = searchParams.get('filter');
+    const locationParam = searchParams.get('location');
+    const ratingParam = searchParams.get('rating');
 
+    // Build the where clause
     const where: Prisma.ReviewWhereInput = {};
 
-    if (location) {
+    // Only add location filter if locationParam exists
+    if (locationParam) {
       where.location = {
-        contains: location.toLowerCase()
+        contains: locationParam.toLowerCase(),
       };
     }
 
-    if (rating !== undefined) {
-      where.rating = { gte: rating };
-    }
-
-    if (filter) {
-      where.OR = [
-        { location: { contains: filter.toLowerCase() } },
-        { content: { contains: filter.toLowerCase() } }
-      ];
+    // Only add rating filter if ratingParam exists and is valid
+    if (ratingParam) {
+      const rating = parseInt(ratingParam, 10);
+      if (!isNaN(rating)) {
+        where.rating = {
+          gte: rating,
+        };
+      }
     }
 
     const reviews = await prisma.review.findMany({
       where,
-      include: { 
+      include: {
         user: {
           select: {
             id: true,
             name: true,
             email: true,
             image: true,
-            anonymous: true
+            anonymous: true,
           }
         }
       },
       orderBy: { createdAt: 'desc' },
     });
 
-    return NextResponse.json(reviews);
+    const filteredReviews = reviews.map(review => {
+      const shouldHideIdentity = (review.anonymous || review.user.anonymous) && 
+                                !isAdmin && 
+                                review.userId !== currentUser?.id;
+
+      return {
+        ...review,
+        user: {
+          ...review.user,
+          name: shouldHideIdentity ? 'Anonymous User' : review.user.name,
+          email: shouldHideIdentity ? '****@****.com' : review.user.email,
+        }
+      };
+    });
+
+    return NextResponse.json(filteredReviews);
   } catch (error) {
     console.error('Error in GET /api/reviews:', error);
     return NextResponse.json(
-      { 
-        error: 'Internal Server Error', 
-        details: error instanceof Error ? error.message : 'Unknown error'
-      }, 
+      { error: 'Internal Server Error' },
       { status: 500 }
     );
   }
+}
+
+interface ReviewCreatePayload {
+  location: string;
+  rating: number;
+  content: string;
+  anonymous?: boolean;
+  images?: string;
+  dynamicFields?: Record<string, unknown>;
 }
 
 export async function POST(request: Request) {
@@ -77,7 +94,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // First, ensure the user exists in the database
+    // First, ensure the user exists in our database
     const dbUser = await prisma.user.upsert({
       where: { kindeId: kindeUser.id },
       update: {
@@ -91,19 +108,26 @@ export async function POST(request: Request) {
       },
     });
 
-    const json = await request.json();
-    const { location, rating, content, anonymous, images, dynamicFields } = json;
+    const payload = await request.json() as ReviewCreatePayload;
+    
+    // Handle anonymous setting - use user's global setting as default
+    const isAnonymous = payload.anonymous !== undefined 
+      ? payload.anonymous 
+      : dbUser.anonymous;
 
-    // Now create the review using the correct user ID
+    // Create the review with properly formatted data
     const review = await prisma.review.create({
       data: {
-        location,
-        rating,
-        content,
-        anonymous,
-        images,
-        dynamicFields,
-        user: { connect: { id: dbUser.id } }, // Connect using the internal ID
+        location: payload.location,
+        rating: payload.rating,
+        content: payload.content,
+        anonymous: isAnonymous,
+        images: payload.images,
+        // Convert dynamicFields to string once
+        dynamicFields: payload.dynamicFields 
+          ? JSON.stringify(payload.dynamicFields)
+          : null,
+        user: { connect: { id: dbUser.id } },
       },
       include: {
         user: {
@@ -112,7 +136,7 @@ export async function POST(request: Request) {
             name: true,
             email: true,
             image: true,
-            anonymous: true
+            anonymous: true,
           }
         }
       }
@@ -122,10 +146,7 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error('Error in POST /api/reviews:', error);
     return NextResponse.json(
-      { 
-        error: 'Internal Server Error', 
-        details: error instanceof Error ? error.message : 'Unknown error'
-      }, 
+      { error: 'Internal Server Error' },
       { status: 500 }
     );
   }

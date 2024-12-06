@@ -2,11 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Review, User } from "@prisma/client";
 import ReviewCard from "./ReviewCard";
 import { useSearchParams } from "next/navigation";
-
-type ReviewWithUser = Review & { user: User };
+import { ReviewWithUser, User } from "@/types";  // Import our custom types
 
 interface ReviewsListProps {
   initialReviews: ReviewWithUser[];
@@ -18,6 +16,9 @@ export default function ReviewsList({ initialReviews, currentUser }: ReviewsList
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const searchParams = useSearchParams();
+  
+  // Check if current user is admin
+  const isAdmin = currentUser?.email === 'imchn24@gmail.com';
 
   useEffect(() => {
     const fetchReviews = async () => {
@@ -28,13 +29,19 @@ export default function ReviewsList({ initialReviews, currentUser }: ReviewsList
         const location = searchParams.get('location');
         const rating = searchParams.get('rating');
 
-        let queryString = '';
-        if (filter) queryString += `filter=${encodeURIComponent(filter)}`;
-        if (location) queryString += `${queryString ? '&' : ''}location=${encodeURIComponent(location)}`;
-        if (rating) queryString += `${queryString ? '&' : ''}rating=${rating}`;
+        // Build query string
+        const queryParams = new URLSearchParams();
+        if (filter) queryParams.set('filter', filter);
+        if (location) queryParams.set('location', location);
+        if (rating) queryParams.set('rating', rating);
 
+        const queryString = queryParams.toString();
         const response = await fetch(`/api/reviews${queryString ? `?${queryString}` : ''}`);
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
         const data = await response.json();
         setReviews(data);
       } catch (e) {
@@ -82,7 +89,12 @@ export default function ReviewsList({ initialReviews, currentUser }: ReviewsList
       className="grid grid-cols-1 md:grid-cols-2 gap-6"
     >
       {reviews.map((review) => (
-        <ReviewCard key={review.id} review={review} currentUser={currentUser} />
+        <ReviewCard 
+          key={review.id} 
+          review={review} 
+          currentUser={currentUser}
+          isAdmin={isAdmin}  // Pass the isAdmin prop
+        />
       ))}
     </motion.div>
   );

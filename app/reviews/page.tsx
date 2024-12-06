@@ -16,8 +16,8 @@ export default async function ReviewsPage({
     name: kindeUser.given_name,
     email: kindeUser.email,
     image: kindeUser.picture,
-    darkMode: false, // Set a default value
-    anonymous: false, // Set a default value
+    darkMode: false,
+    anonymous: false,
     createdAt: new Date(),
     updatedAt: new Date(),
   } : null;
@@ -27,7 +27,6 @@ export default async function ReviewsPage({
 
   return (
     <div className="container mx-auto py-8">
-      <h1 className="text-3xl font-bold mb-6">Reviews</h1>
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
         <div className="lg:col-span-1">
           <ReviewFilters location={location} rating={rating} />

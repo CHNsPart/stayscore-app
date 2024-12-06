@@ -1,6 +1,6 @@
-"use client";
+"use client"
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -9,16 +9,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Star } from "lucide-react";
+import { Star, EyeOff } from "lucide-react";
 import { motion } from "framer-motion";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const reviewSchema = z.object({
   location: z.string().min(1, "Location is required"),
   rating: z.number().min(1).max(10),
   content: z.string().min(10, "Review content must be at least 10 characters"),
-  anonymous: z.boolean(),
+  anonymous: z.boolean().default(false),
   images: z.string().optional(),
-  dynamicFields: z.record(z.string()).optional(),
+  dynamicFields: z.record(z.unknown()).optional(),
 });
 
 type ReviewFormData = z.infer<typeof reviewSchema>;
@@ -26,6 +27,21 @@ type ReviewFormData = z.infer<typeof reviewSchema>;
 export default function CreateReviewForm() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [globalAnonymous, setGlobalAnonymous] = useState(false);
+
+  // Fetch user's global anonymous setting
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const response = await fetch('/api/settings');
+        const data = await response.json();
+        setGlobalAnonymous(data.anonymous);
+      } catch (error) {
+        console.error('Error fetching settings:', error);
+      }
+    };
+    fetchSettings();
+  }, []);
 
   const {
     register,
@@ -37,7 +53,7 @@ export default function CreateReviewForm() {
     resolver: zodResolver(reviewSchema),
     defaultValues: {
       rating: 5,
-      anonymous: false,
+      anonymous: globalAnonymous, // Set default based on global setting
     },
   });
 
@@ -47,17 +63,21 @@ export default function CreateReviewForm() {
   const onSubmit = async (data: ReviewFormData) => {
     setIsSubmitting(true);
     try {
+      // Explicitly include the anonymous field in the request
       const response = await fetch("/api/reviews", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({...data, anonymous}),
+        body: JSON.stringify({
+          ...data,
+          anonymous: data.anonymous // Make sure this is explicitly sent
+        }),
       });
 
-      if (response.ok) {
-        router.push("/reviews");
-      } else {
+      if (!response.ok) {
         throw new Error("Failed to create review");
       }
+
+      router.push("/reviews");
     } catch (error) {
       console.error("Error creating review:", error);
     } finally {
@@ -73,6 +93,15 @@ export default function CreateReviewForm() {
       onSubmit={handleSubmit(onSubmit)}
       className="space-y-6"
     >
+      {globalAnonymous && (
+        <Alert>
+          <AlertDescription className="flex items-center gap-2">
+            <EyeOff className="h-4 w-4" />
+            Global anonymous mode is enabled. Your review will be anonymous by default.
+          </AlertDescription>
+        </Alert>
+      )}
+
       <div>
         <label htmlFor="location" className="block text-sm font-medium mb-1">
           Location
@@ -131,8 +160,13 @@ export default function CreateReviewForm() {
       </div>
 
       <div className="flex items-center space-x-2">
-        <Switch id="anonymous" {...register("anonymous")} />
-        <label htmlFor="anonymous" className="text-sm font-medium">
+        <Switch 
+          id="anonymous" 
+          checked={anonymous}
+          onCheckedChange={(checked) => setValue("anonymous", checked)}
+        />
+        <label htmlFor="anonymous" className="text-sm font-medium flex items-center gap-2">
+          <EyeOff className="h-4 w-4" />
           Post anonymously
         </label>
       </div>
