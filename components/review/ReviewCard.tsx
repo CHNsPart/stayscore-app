@@ -1,4 +1,4 @@
-import { Star, MapPin, User as UserIcon } from "lucide-react";
+import { Star, MapPin, User as UserIcon, EyeOff } from "lucide-react";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -85,10 +85,10 @@ export default function ReviewCard({ review, currentUser, isAdmin }: ReviewCardP
         <div className="flex space-x-2">
           {isOwnReview && <Badge variant="outline">Your Review</Badge>}
           {review.anonymous && isAdmin && (
-            <Badge variant="secondary" className="text-xs">Anonymous Review</Badge>
+            <Badge variant="secondary"><EyeOff className="size-4 mr-2"/> Review</Badge>
           )}
           {review.user.anonymous && isAdmin && (
-            <Badge variant="secondary" className="text-xs">Anonymous User</Badge>
+            <Badge variant="secondary"><EyeOff className="size-4 mr-2"/> User</Badge>
           )}
           {dynamicFields && <Badge variant="secondary">Custom Fields</Badge>}
         </div>

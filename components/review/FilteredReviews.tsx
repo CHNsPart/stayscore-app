@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Review, User } from "@prisma/client";
 import ReviewsList from '@/components/review/ReviewsList';
+import Loader from '../theme/Loader';
 
 interface FilteredReviewsProps {
   location?: string;
@@ -39,7 +40,7 @@ export default function FilteredReviews({ location, rating, currentUser }: Filte
     fetchReviews();
   }, [location, rating]);
 
-  if (isLoading) return <div>Loading...</div>;
+  if (isLoading) return <Loader size="md" />;
   if (error) return <div>Error: {error}</div>;
 
   return <ReviewsList initialReviews={reviews} currentUser={currentUser} />;

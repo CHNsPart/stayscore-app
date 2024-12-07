@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Star } from "lucide-react";
 import { useDebounce } from "use-debounce";
 import { motion, AnimatePresence } from "framer-motion";
+import Loader from "../theme/Loader";
 
 interface ReviewFiltersProps {
   location?: string;
@@ -90,13 +91,9 @@ export default function ReviewFilters({
   return (
     <Card className="relative">
       {isFiltering && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="absolute inset-0 bg-background/50 backdrop-blur-sm z-10 flex items-center justify-center"
-        >
-          <div className="text-sm text-muted-foreground">Updating filters...</div>
-        </motion.div>
+        <div className="absolute inset-0 flex items-center justify-center bg-background/50 backdrop-blur-sm">
+          <Loader size="sm" />
+        </div>
       )}
       
       <CardHeader>

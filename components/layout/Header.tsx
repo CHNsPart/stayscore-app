@@ -69,6 +69,8 @@ export default async function Header() {
                 </Link>
               ))}
 
+              {!authenticated && <DarkModeToggle />}
+
               {authenticated && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>

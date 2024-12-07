@@ -6,6 +6,7 @@ import { Switch } from "@/components/ui/switch";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useTheme } from 'next-themes';
 import { AnonymousSettings } from '@/components/profile/AnonymousSettings';
+import Loader from '../theme/Loader';
 
 type DynamicFieldValue = string | number | boolean;
 
@@ -88,7 +89,7 @@ export default function ProfileClient() {
   };
 
   if (error) return <div>Error: {error}</div>;
-  if (!user) return <div>Loading...</div>;
+  if (!user) return <Loader fullPage />;
 
   return (
     <div className="min-h-screen bg-background text-foreground">

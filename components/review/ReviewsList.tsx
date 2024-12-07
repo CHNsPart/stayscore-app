@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import ReviewCard from "./ReviewCard";
 import { useSearchParams } from "next/navigation";
 import { ReviewWithUser, User } from "@/types";  // Import our custom types
+import Loader from "../theme/Loader";
 
 interface ReviewsListProps {
   initialReviews: ReviewWithUser[];
@@ -61,9 +62,9 @@ export default function ReviewsList({ initialReviews, currentUser }: ReviewsList
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.5 }}
-        className="flex justify-center items-center h-64"
+        className="flex justify-center items-center min-h-[400px]"
       >
-        <p>Loading...</p>
+        <Loader size="lg" />
       </motion.div>
     );
   }
