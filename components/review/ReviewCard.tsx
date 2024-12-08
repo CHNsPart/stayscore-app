@@ -22,7 +22,7 @@ export default function ReviewCard({ review, currentUser, isAdmin }: ReviewCardP
     <Card className="h-full flex flex-col">
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle className="text-xl font-semibold">{review.location}</CardTitle>
+          <CardTitle className="text-xl font-semibold">{review.location.split(',')[0]}</CardTitle>
         </div>
         <div className="flex items-center text-sm text-muted-foreground">
           <MapPin className="size-4 mr-1" />
@@ -64,7 +64,7 @@ export default function ReviewCard({ review, currentUser, isAdmin }: ReviewCardP
       </CardContent>
 
       <CardFooter className="flex items-center justify-between">
-        <div className="flex items-center w-full">
+        <div className="flex items-center w-full gap-2">
           <div className="flex items-center space-x-2 w-full">
             <Avatar>
               {shouldHideIdentity ? (

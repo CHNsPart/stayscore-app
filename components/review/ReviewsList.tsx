@@ -3,9 +3,9 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import ReviewCard from "./ReviewCard";
-import { useSearchParams } from "next/navigation";
-import { ReviewWithUser, User } from "@/types";  // Import our custom types
+import { ReviewWithUser, User } from "@/types";  
 import Loader from "../theme/Loader";
+import { SearchX } from "lucide-react";
 
 interface ReviewsListProps {
   initialReviews: ReviewWithUser[];
@@ -14,47 +14,15 @@ interface ReviewsListProps {
 
 export default function ReviewsList({ initialReviews, currentUser }: ReviewsListProps) {
   const [reviews, setReviews] = useState(initialReviews);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const searchParams = useSearchParams();
-  
+  const [isLoading] = useState(false);
+  const [error] = useState<string | null>(null);  
   // Check if current user is admin
   const isAdmin = currentUser?.email === 'imchn24@gmail.com';
 
+  // Use the initial reviews directly instead of fetching again
   useEffect(() => {
-    const fetchReviews = async () => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const filter = searchParams.get('filter');
-        const location = searchParams.get('location');
-        const rating = searchParams.get('rating');
-
-        // Build query string
-        const queryParams = new URLSearchParams();
-        if (filter) queryParams.set('filter', filter);
-        if (location) queryParams.set('location', location);
-        if (rating) queryParams.set('rating', rating);
-
-        const queryString = queryParams.toString();
-        const response = await fetch(`/api/reviews${queryString ? `?${queryString}` : ''}`);
-        
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        setReviews(data);
-      } catch (e) {
-        console.error('Error fetching reviews:', e);
-        setError('Failed to fetch reviews. Please try again later.');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchReviews();
-  }, [searchParams]);
+    setReviews(initialReviews);
+  }, [initialReviews]);
 
   if (isLoading) {
     return (
@@ -82,6 +50,26 @@ export default function ReviewsList({ initialReviews, currentUser }: ReviewsList
     );
   }
 
+  if (reviews.length === 0) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="flex flex-col items-center justify-center min-h-[400px] text-center p-8"
+      >
+        <div className="relative p-5 mb-6">
+          <div className="absolute inset-0 rounded-full bg-primary/10 animate-pulse" />
+          <SearchX className="relative size-16 text-primary/80" />
+        </div>
+        <h3 className="text-2xl font-semibold mb-2">No Reviews Found</h3>
+        <p className="text-muted-foreground mb-6 max-w-md">
+          {"We couldn't find any reviews matching your current filters. Try adjusting your search criteria or explore all reviews."}
+        </p>
+      </motion.div>
+    );
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -94,7 +82,7 @@ export default function ReviewsList({ initialReviews, currentUser }: ReviewsList
           key={review.id} 
           review={review} 
           currentUser={currentUser}
-          isAdmin={isAdmin}  // Pass the isAdmin prop
+          isAdmin={isAdmin}
         />
       ))}
     </motion.div>

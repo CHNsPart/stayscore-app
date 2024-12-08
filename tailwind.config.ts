@@ -56,15 +56,37 @@ const config: Config = {
   			md: 'calc(var(--radius) - 2px)',
   			sm: 'calc(var(--radius) - 4px)'
   		},
-			keyframes: {
-				"shine": {
-					from: { backgroundPosition: '200% 0' },
-					to: { backgroundPosition: '-200% 0' },
-				},
-			},
-			animation: {
-				"shine": "shine 8s ease-in-out infinite",
-			},
+  		keyframes: {
+  			'shine': {
+  				from: {
+  					backgroundPosition: '200% 0'
+  				},
+  				to: {
+  					backgroundPosition: '-200% 0'
+  				}
+  			},
+  			'accordion-down': {
+  				from: {
+  					height: '0'
+  				},
+  				to: {
+  					height: 'var(--radix-accordion-content-height)'
+  				}
+  			},
+  			'accordion-up': {
+  				from: {
+  					height: 'var(--radix-accordion-content-height)'
+  				},
+  				to: {
+  					height: '0'
+  				}
+  			}
+  		},
+  		animation: {
+  			'shine': 'shine 8s ease-in-out infinite',
+  			'accordion-down': 'accordion-down 0.2s ease-out',
+  			'accordion-up': 'accordion-up 0.2s ease-out'
+  		}
   	}
   },
   plugins: [require("tailwindcss-animate")],

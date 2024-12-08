@@ -13,9 +13,28 @@ import { Star, EyeOff } from "lucide-react";
 import { motion } from "framer-motion";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import Loader from "../theme/Loader";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { CANADIAN_PROVINCES } from "@/lib/location-utils";
+
+interface LocationFields {
+  address: string;
+  state: string;
+  postalCode: string;
+}
 
 const reviewSchema = z.object({
-  location: z.string().min(1, "Location is required"),
+  locationFields: z.object({
+    address: z.string().min(1, "Address is required"),
+    state: z.string().min(1, "Province/Territory is required"),
+    postalCode: z.string().min(6, "Valid postal code is required").max(7, "Postal code too long"),
+  }),
   rating: z.number().min(1).max(10),
   content: z.string().min(10, "Review content must be at least 10 characters"),
   anonymous: z.boolean().default(false),
@@ -54,23 +73,37 @@ export default function CreateReviewForm() {
     resolver: zodResolver(reviewSchema),
     defaultValues: {
       rating: 5,
-      anonymous: globalAnonymous, // Set default based on global setting
+      anonymous: globalAnonymous,
+      locationFields: {
+        state: "ON", // Default to Ontario
+        address: "",
+        postalCode: "",
+      },
     },
   });
 
   const rating = watch("rating");
   const anonymous = watch("anonymous");
+  const locationFields = watch("locationFields");
+
+  const formatLocation = (fields: LocationFields): string => {
+    const { address, state, postalCode } = fields;
+    const stateLabel = CANADIAN_PROVINCES.find(p => p.value === state)?.label || state;
+    return `${address}, ${stateLabel}, Canada, ${postalCode}`.trim();
+  };
 
   const onSubmit = async (data: ReviewFormData) => {
     setIsSubmitting(true);
     try {
-      // Explicitly include the anonymous field in the request
+      const formattedLocation = formatLocation(data.locationFields);
+      
       const response = await fetch("/api/reviews", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...data,
-          anonymous: data.anonymous // Make sure this is explicitly sent
+          location: formattedLocation,
+          anonymous: data.anonymous
         }),
       });
 
@@ -109,18 +142,67 @@ export default function CreateReviewForm() {
           </Alert>
         )}
 
-        <div>
-          <label htmlFor="location" className="block text-sm font-medium mb-1">
-            Location
-          </label>
-          <Input
-            id="location"
-            {...register("location")}
-            placeholder="Enter the location"
-          />
-          {errors.location && (
-            <p className="text-red-500 text-sm mt-1">{errors.location.message}</p>
-          )}
+        <div className="space-y-4">
+          <div>
+            <Label>Country</Label>
+            <Input
+              value="Canada"
+              disabled
+              className="bg-muted"
+            />
+          </div>
+
+          <div>
+            <Label>Province/Territory</Label>
+            <Select
+              defaultValue={locationFields.state}
+              onValueChange={(value) => setValue("locationFields.state", value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select province/territory" />
+              </SelectTrigger>
+              <SelectContent>
+                {CANADIAN_PROVINCES.map((province) => (
+                  <SelectItem key={province.value} value={province.value}>
+                    {province.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {errors.locationFields?.state && (
+              <p className="text-sm text-destructive mt-1">{errors.locationFields.state.message}</p>
+            )}
+          </div>
+
+          <div>
+            <Label>Address</Label>
+            <Textarea
+              {...register("locationFields.address")}
+              placeholder="Enter street address"
+              className="resize-none"
+            />
+            {errors.locationFields?.address && (
+              <p className="text-sm text-destructive mt-1">{errors.locationFields.address.message}</p>
+            )}
+          </div>
+
+          <div>
+            <Label>Postal Code</Label>
+            <Input
+              {...register("locationFields.postalCode")}
+              placeholder="A1A 1A1"
+              className="uppercase"
+              onChange={(e) => {
+                const formatted = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+                if (formatted.length <= 6) {
+                  setValue("locationFields.postalCode", formatted);
+                }
+              }}
+            />
+            {errors.locationFields?.postalCode && (
+              <p className="text-sm text-destructive mt-1">{errors.locationFields.postalCode.message}</p>
+            )}
+          </div>
         </div>
 
         <div>
@@ -141,26 +223,20 @@ export default function CreateReviewForm() {
         </div>
 
         <div>
-          <label htmlFor="content" className="block text-sm font-medium mb-1">
-            Review Content
-          </label>
+          <Label>Review Content</Label>
           <Textarea
-            id="content"
             {...register("content")}
             placeholder="Write your review here"
             rows={5}
           />
           {errors.content && (
-            <p className="text-red-500 text-sm mt-1">{errors.content.message}</p>
+            <p className="text-sm text-destructive mt-1">{errors.content.message}</p>
           )}
         </div>
 
         <div>
-          <label htmlFor="images" className="block text-sm font-medium mb-1">
-            Images (optional)
-          </label>
+          <Label>Images (optional)</Label>
           <Input
-            id="images"
             {...register("images")}
             placeholder="Enter image URLs separated by commas"
           />

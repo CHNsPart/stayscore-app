@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from "@/lib/prisma";
 import { getKindeServerSession } from '@kinde-oss/kinde-auth-nextjs/server';
+import { CANADIAN_PROVINCES } from '@/lib/location-utils';
 import { Prisma } from '@prisma/client';
 
 const ADMIN_EMAIL = 'imchn24@gmail.com';
@@ -12,29 +13,63 @@ export async function GET(request: NextRequest) {
     const isAdmin = currentUser?.email === ADMIN_EMAIL;
 
     const { searchParams } = new URL(request.url);
-    const locationParam = searchParams.get('location');
+    const stateParam = searchParams.get('state');
+    const addressParam = searchParams.get('address')?.toLowerCase();
+    const postalCodeParam = searchParams.get('postalCode')?.toUpperCase();
     const ratingParam = searchParams.get('rating');
 
     // Build the where clause
-    const where: Prisma.ReviewWhereInput = {};
+    const whereConditions: Prisma.ReviewWhereInput[] = [];
 
-    // Only add location filter if locationParam exists
-    if (locationParam) {
-      where.location = {
-        contains: locationParam.toLowerCase(),
-      };
-    }
-
-    // Only add rating filter if ratingParam exists and is valid
-    if (ratingParam) {
-      const rating = parseInt(ratingParam, 10);
-      if (!isNaN(rating)) {
-        where.rating = {
-          gte: rating,
-        };
+    // Add state filter
+    if (stateParam && stateParam !== 'all') {
+      const provinceLabel = CANADIAN_PROVINCES.find(p => p.value === stateParam)?.label;
+      if (provinceLabel) {
+        whereConditions.push({
+          location: {
+            contains: provinceLabel,
+          }
+        });
       }
     }
 
+    // Add address filter
+    if (addressParam) {
+      // For SQLite, we'll use LIKE with the lowercase function
+      whereConditions.push({
+        location: {
+          contains: addressParam,
+        }
+      });
+    }
+
+    // Add postal code filter
+    if (postalCodeParam) {
+      whereConditions.push({
+        location: {
+          contains: postalCodeParam,
+        }
+      });
+    }
+
+    // Add rating filter
+    if (ratingParam) {
+      const rating = parseInt(ratingParam, 10);
+      if (!isNaN(rating)) {
+        whereConditions.push({
+          rating: {
+            gte: rating
+          }
+        });
+      }
+    }
+
+    // Construct the final where clause
+    const where: Prisma.ReviewWhereInput = whereConditions.length > 0
+      ? { AND: whereConditions }
+      : {};
+
+    // Fetch reviews with filters
     const reviews = await prisma.review.findMany({
       where,
       include: {
@@ -51,10 +86,16 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: 'desc' },
     });
 
-    const filteredReviews = reviews.map(review => {
+    // Process reviews and handle anonymity
+    const processedReviews = reviews.map(review => {
       const shouldHideIdentity = (review.anonymous || review.user.anonymous) && 
                                 !isAdmin && 
                                 review.userId !== currentUser?.id;
+
+      // Parse location
+      const [address = '', state = '', country = '', postalCode = ''] = review.location
+        .split(',')
+        .map(part => part.trim());
 
       return {
         ...review,
@@ -62,8 +103,35 @@ export async function GET(request: NextRequest) {
           ...review.user,
           name: shouldHideIdentity ? 'Anonymous User' : review.user.name,
           email: shouldHideIdentity ? '****@****.com' : review.user.email,
+        },
+        parsedLocation: {
+          address,
+          state,
+          country,
+          postalCode
         }
       };
+    });
+
+    // Additional filter for case-insensitive matching (since SQLite's LIKE is case-sensitive)
+    const filteredReviews = processedReviews.filter(review => {
+      const locationLower = review.location.toLowerCase();
+      let matches = true;
+
+      if (stateParam && stateParam !== 'all') {
+        const provinceLabel = CANADIAN_PROVINCES.find(p => p.value === stateParam)?.label;
+        matches = matches && locationLower.includes(provinceLabel?.toLowerCase() || '');
+      }
+
+      if (addressParam) {
+        matches = matches && locationLower.includes(addressParam);
+      }
+
+      if (postalCodeParam) {
+        matches = matches && review.location.toUpperCase().includes(postalCodeParam);
+      }
+
+      return matches;
     });
 
     return NextResponse.json(filteredReviews);

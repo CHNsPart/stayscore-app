@@ -1,17 +1,32 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Star, Calendar } from 'lucide-react';
+import { Star, Calendar, BarChart2, MapPin } from 'lucide-react';
 import { Switch } from "@/components/ui/switch";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useTheme } from 'next-themes';
 import { AnonymousSettings } from '@/components/profile/AnonymousSettings';
 import Loader from '../theme/Loader';
 import Image from 'next/image';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import { Trash2 } from "lucide-react";
+import { useToast } from '@/hooks/use-toast';
 
 type DynamicFieldValue = string | number | boolean;
 
 interface Review {
+  id: string;
   location: string;
   rating: number;
   createdAt: string;
@@ -35,6 +50,7 @@ export default function ProfileClient() {
   const [anonymousGlobal, setAnonymousGlobal] = useState(false);
   const { theme, setTheme } = useTheme();
   const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     fetchUserData();
@@ -54,6 +70,33 @@ export default function ProfileClient() {
     } catch (error) {
       console.error('Error fetching user data:', error);
       setError(error instanceof Error ? error.message : 'Unknown error');
+    }
+  };
+
+  const deleteReview = async (reviewId: string) => {
+    try {
+      const response = await fetch(`/api/reviews/${reviewId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete review');
+      }
+
+      // Update the reviews state by filtering out the deleted review
+      setReviews(reviews.filter(review => review.id !== reviewId));
+      
+      toast({
+        title: "Review deleted",
+        description: "Your review has been successfully deleted.",
+      });
+    } catch (error) {
+      console.error('Error deleting review:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to delete review. Please try again.",
+      });
     }
   };
 
@@ -82,11 +125,11 @@ export default function ProfileClient() {
     return (sum / reviews.length).toFixed(1);
   };
 
-  const getMostReviewedLocation = () => {
-    const locations = reviews.map(review => review.location);
-    return locations.sort((a, b) =>
-      locations.filter(v => v === a).length - locations.filter(v => v === b).length
-    ).pop() || '';
+  const getMostRecentLocation = () => {
+    if (reviews.length === 0) return '';
+    // Get state from the most recent review's location
+    const mostRecentLocation = reviews[0].location.split(',')[1]?.trim() || '';
+    return mostRecentLocation;
   };
 
   if (error) return <div>Error: {error}</div>;
@@ -111,19 +154,48 @@ export default function ProfileClient() {
             </div>
 
             {/* User Stats */}
-            <div className="md:col-span-2 bg-card text-card-foreground rounded-lg shadow-md p-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
-                <div>
-                  <p className="text-3xl leading-10 font-bold text-chart-1">{reviews.length}</p>
-                  <p className="text-sm text-muted-foreground">Total Reviews</p>
+            <div className="md:col-span-2">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="bg-card text-card-foreground rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow duration-200">
+                  <div className="flex flex-col items-center">
+                    <div className="mb-2 p-3 bg-chart-1/10 rounded-full">
+                      <Star className="h-6 w-6 text-chart-1" />
+                    </div>
+                    <p className="text-3xl font-bold text-chart-1 mb-1">
+                      {reviews.length}
+                    </p>
+                    <p className="text-sm text-muted-foreground font-medium">
+                      Total Reviews
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-3xl leading-10 font-bold text-chart-2">{getAverageRating()}</p>
-                  <p className="text-sm text-muted-foreground">Average Rating</p>
+                
+                <div className="bg-card text-card-foreground rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow duration-200">
+                  <div className="flex flex-col items-center">
+                    <div className="mb-2 p-3 bg-chart-2/10 rounded-full">
+                      <BarChart2 className="h-6 w-6 text-chart-2" />
+                    </div>
+                    <p className="text-3xl font-bold text-chart-2 mb-1">
+                      {getAverageRating()}
+                    </p>
+                    <p className="text-sm text-muted-foreground font-medium">
+                      Average Rating
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-xl leading-10 font-bold text-chart-3">{getMostReviewedLocation()}</p>
-                  <p className="text-sm text-muted-foreground">Most Reviewed</p>
+                
+                <div className="bg-card text-card-foreground rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow duration-200">
+                  <div className="flex flex-col items-center">
+                    <div className="mb-2 p-3 bg-chart-3/10 rounded-full">
+                      <MapPin className="h-6 w-6 text-chart-3" />
+                    </div>
+                    <p className="text-3xl font-bold text-chart-3 mb-1 truncate max-w-[150px]">
+                      {getMostRecentLocation()}
+                    </p>
+                    <p className="text-sm text-muted-foreground font-medium">
+                      Most Recent Location
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -146,8 +218,8 @@ export default function ProfileClient() {
           <div className="md:col-span-3 bg-card text-card-foreground rounded-lg shadow-md p-6">
             <h2 className="text-xl font-semibold mb-4">Recent Reviews</h2>
             <div className="space-y-4">
-              {reviews.slice(0, 3).map((review, index) => (
-                <div key={index} className="border-b border-border last:border-b-0 pb-4 hover:bg-accent hover:text-accent-foreground p-2">
+              {reviews.slice(0, 3).map((review) => (
+                <div key={review.id} className="border-b border-border last:border-b-0 pb-4 hover:bg-accent hover:text-accent-foreground p-2">
                   <div className="flex justify-between items-start">
                     <div>
                       <h3 className="font-semibold text-lg">{review.location}</h3>
@@ -157,16 +229,46 @@ export default function ProfileClient() {
                         ))}
                       </div>
                     </div>
-                    <div className="flex items-center text-sm text-muted-foreground">
-                      <Calendar className="w-4 h-4 mr-1" />
-                      {new Date(review.createdAt).toLocaleDateString()}
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center text-sm text-muted-foreground">
+                        <Calendar className="w-4 h-4 mr-1" />
+                        {new Date(review.createdAt).toLocaleDateString()}
+                      </div>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete Review</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Are you sure you want to delete this review? This action cannot be undone.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => deleteReview(review.id)}
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
+                              Delete
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </div>
                   </div>
                   <p className="mt-2 text-muted-foreground">{review.content.substring(0, 100)}...</p>
                   {review.images && 
                     <Image 
                       src={review.images} 
-                      alt={review.images} 
+                      alt={review.location} 
                       height={150} 
                       width={150} 
                       className="mt-2 text-sm w-full md:w-fit" 
@@ -176,7 +278,7 @@ export default function ProfileClient() {
                     <div className="mt-2 text-sm text-muted-foreground">
                       <p>Additional Information:</p>
                       <ul>
-                        {Object.entries(review.dynamicFields).map(([key, value]) => (
+                        {Object.entries(JSON.parse(String(review.dynamicFields))).map(([key, value]) => (
                           <li key={key}>{key}: {String(value)}</li>
                         ))}
                       </ul>
