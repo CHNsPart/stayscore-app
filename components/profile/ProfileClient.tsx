@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useTheme } from 'next-themes';
 import { AnonymousSettings } from '@/components/profile/AnonymousSettings';
 import Loader from '../theme/Loader';
+import Image from 'next/image';
 
 type DynamicFieldValue = string | number | boolean;
 
@@ -96,7 +97,7 @@ export default function ProfileClient() {
       <div className="container mx-auto px-4 py-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* User Information */}
-          <div className="md:col-span-2 bg-card text-card-foreground rounded-lg shadow-md p-6">
+          <div className="md:col-span-2 bg-card text-card-foreground rounded-lg shadow-md p-6 space-y-4">
             <div className="flex items-center space-x-4">
               <Avatar className="w-24 h-24">
                 <AvatarImage src={user.image || ''} alt={user.name || 'User'} />
@@ -106,6 +107,24 @@ export default function ProfileClient() {
                 <h1 className="text-2xl font-bold">{anonymousGlobal ? 'Anonymous User' : user.name || 'User'}</h1>
                 <p className="text-muted-foreground">{anonymousGlobal ? '****@****.com' : user.email}</p>
                 <p className="text-sm text-muted-foreground">Joined: {new Date(user.createdAt).toLocaleDateString()}</p>
+              </div>
+            </div>
+
+            {/* User Stats */}
+            <div className="md:col-span-2 bg-card text-card-foreground rounded-lg shadow-md p-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+                <div>
+                  <p className="text-3xl leading-10 font-bold text-chart-1">{reviews.length}</p>
+                  <p className="text-sm text-muted-foreground">Total Reviews</p>
+                </div>
+                <div>
+                  <p className="text-3xl leading-10 font-bold text-chart-2">{getAverageRating()}</p>
+                  <p className="text-sm text-muted-foreground">Average Rating</p>
+                </div>
+                <div>
+                  <p className="text-xl leading-10 font-bold text-chart-3">{getMostReviewedLocation()}</p>
+                  <p className="text-sm text-muted-foreground">Most Reviewed</p>
+                </div>
               </div>
             </div>
           </div>
@@ -123,37 +142,18 @@ export default function ProfileClient() {
             />
           </div>
 
-          {/* User Stats */}
-          <div className="md:col-span-2 bg-card text-card-foreground rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold mb-4">User Stats</h2>
-            <div className="grid grid-cols-3 gap-4 text-center">
-              <div>
-                <p className="text-3xl font-bold text-chart-1">{reviews.length}</p>
-                <p className="text-sm text-muted-foreground">Total Reviews</p>
-              </div>
-              <div>
-                <p className="text-3xl font-bold text-chart-2">{getAverageRating()}</p>
-                <p className="text-sm text-muted-foreground">Average Rating</p>
-              </div>
-              <div>
-                <p className="text-3xl font-bold text-chart-3">{getMostReviewedLocation()}</p>
-                <p className="text-sm text-muted-foreground">Most Reviewed</p>
-              </div>
-            </div>
-          </div>
-
           {/* Recent Reviews */}
           <div className="md:col-span-3 bg-card text-card-foreground rounded-lg shadow-md p-6">
             <h2 className="text-xl font-semibold mb-4">Recent Reviews</h2>
             <div className="space-y-4">
               {reviews.slice(0, 3).map((review, index) => (
-                <div key={index} className="border-b border-border last:border-b-0 pb-4 hover:bg-accent hover:text-accent-foreground rounded-lg p-2">
+                <div key={index} className="border-b border-border last:border-b-0 pb-4 hover:bg-accent hover:text-accent-foreground p-2">
                   <div className="flex justify-between items-start">
                     <div>
                       <h3 className="font-semibold text-lg">{review.location}</h3>
                       <div className="flex items-center mt-1">
                         {[...Array(10)].map((_, i) => (
-                          <Star key={i} className={`w-4 h-4 ${i < review.rating ? 'text-chart-4 fill-chart-4' : 'text-muted'}`} />
+                          <Star key={i} className={`size-4 ${i < review.rating ? 'text-chart-4 fill-chart-4' : 'text-muted'}`} />
                         ))}
                       </div>
                     </div>
@@ -163,7 +163,15 @@ export default function ProfileClient() {
                     </div>
                   </div>
                   <p className="mt-2 text-muted-foreground">{review.content.substring(0, 100)}...</p>
-                  {review.images && <p className="mt-2 text-sm text-muted-foreground">Images: {review.images}</p>}
+                  {review.images && 
+                    <Image 
+                      src={review.images} 
+                      alt={review.images} 
+                      height={150} 
+                      width={150} 
+                      className="mt-2 text-sm w-full md:w-fit" 
+                    />
+                  }
                   {review.dynamicFields && (
                     <div className="mt-2 text-sm text-muted-foreground">
                       <p>Additional Information:</p>

@@ -23,10 +23,10 @@ export default function ReviewCard({ review, currentUser, isAdmin }: ReviewCardP
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="text-xl font-semibold">{review.location}</CardTitle>
-          <div className="flex items-center text-sm text-muted-foreground">
-            <MapPin className="size-4 mr-1" />
-            {review.location}
-          </div>
+        </div>
+        <div className="flex items-center text-sm text-muted-foreground">
+          <MapPin className="size-4 mr-1" />
+          {review.location}
         </div>
         <div className="flex items-center justify-between">
           <div className="flex items-center">
@@ -64,33 +64,35 @@ export default function ReviewCard({ review, currentUser, isAdmin }: ReviewCardP
       </CardContent>
 
       <CardFooter className="flex items-center justify-between">
-        <div className="flex items-center space-x-2">
-          <Avatar>
-            {shouldHideIdentity ? (
-              <AvatarFallback>
-                <UserIcon className="size-4" />
-              </AvatarFallback>
-            ) : (
-              <>
-                <AvatarImage src={review.user.image || undefined} />
-                <AvatarFallback>{review.user.name?.[0] || "U"}</AvatarFallback>
-              </>
-            )}
-          </Avatar>
-          <div>
-            <p className="text-sm font-medium">{displayName}</p>
-            <p className="text-xs text-muted-foreground">{displayEmail}</p>
+        <div className="flex items-center w-full">
+          <div className="flex items-center space-x-2 w-full">
+            <Avatar>
+              {shouldHideIdentity ? (
+                <AvatarFallback>
+                  <UserIcon className="size-4" />
+                </AvatarFallback>
+              ) : (
+                <>
+                  <AvatarImage src={review.user.image || undefined} />
+                  <AvatarFallback>{review.user.name?.[0] || "U"}</AvatarFallback>
+                </>
+              )}
+            </Avatar>
+            <div>
+              <p className="text-sm font-medium">{displayName}</p>
+              <p className="text-xs text-muted-foreground">{displayEmail}</p>
+            </div>
           </div>
-        </div>
-        <div className="flex space-x-2">
-          {isOwnReview && <Badge variant="outline">Your Review</Badge>}
-          {review.anonymous && isAdmin && (
-            <Badge variant="secondary"><EyeOff className="size-4 mr-2"/> Review</Badge>
-          )}
-          {review.user.anonymous && isAdmin && (
-            <Badge variant="secondary"><EyeOff className="size-4 mr-2"/> User</Badge>
-          )}
-          {dynamicFields && <Badge variant="secondary">Custom Fields</Badge>}
+          <div className="flex flex-col space-y-1">
+            {isOwnReview && <Badge variant="outline">Your Review</Badge>}
+            {review.anonymous && isAdmin && (
+              <Badge variant="secondary"><EyeOff className="size-4 mr-2"/> Review</Badge>
+            )}
+            {review.user.anonymous && isAdmin && (
+              <Badge variant="secondary"><EyeOff className="size-4 mr-2"/> User</Badge>
+            )}
+            {dynamicFields && <Badge variant="secondary">Custom Fields</Badge>}
+          </div>
         </div>
       </CardFooter>
     </Card>

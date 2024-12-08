@@ -62,10 +62,15 @@ export default async function Header() {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className="flex items-center space-x-2 text-sm font-medium transition-colors hover:text-primary"
                 >
-                  <link.icon className="h-4 w-4" />
-                  <span>{link.label}</span>
+                  <Button
+                    size={"sm"}
+                    variant={"linkHover2"}
+                    className="flex items-center space-x-2 text-sm font-medium transition-colors hover:text-primary"
+                  >
+                    <link.icon className="h-4 w-4" />
+                    <span>{link.label}</span>
+                  </Button>
                 </Link>
               ))}
 
